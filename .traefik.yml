@@ -1,10 +1,10 @@
-displayName: AWS Sink
+displayName: AWS
 type: middleware
 
-import: github.com/yoeluk/aws-sink
+import: github.com/bluecatengineering/traefik-aws-plugin
 
-summary: This middleware sink put request directly onto an aws service like S3 or Dynamodb. Currently, only S3 is supported.
+summary: Push data to and pull data from Amazon Web Services
 
 testData:
-  sinkType: local
-  localDirectory: local-sink
+  service: local
+  directory: aws-local-directory

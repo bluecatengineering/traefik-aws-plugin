@@ -8,8 +8,5 @@ providers:
 
 experimental:
   localPlugins:
-    aws-sink:
-      moduleName: github.com/yoeluk/aws-sink
-
-
-
+    example:
+      moduleName: github.com/bluecatengineering/traefik-aws-plugin
