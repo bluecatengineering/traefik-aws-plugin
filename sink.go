@@ -37,9 +37,9 @@ type AwsSink struct {
 }
 
 var demoCreds = aws.Credentials{
-	AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
-	AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-	SecurityToken:   "FwoGZXIvYXdzENr//////////wEaDBNNhxo5VhYpviajAiLkASVUVAF1Xl/yvCTfISORZlBbHizcJGduksPWnFLNiq8HHYKsDjzJYa1T832QTlywhWjuVjsTVe2NPrE5buQ8HKU5MNINSDj9XW3A/RUFny3MXqycLNDevcVtAq7yzWq8JFtHud5GNHrZC5lHVulI1qfK36mL8kOvHPDt4oFkZ6kkGZoh7lKQHvwRrjK1su8nKqZIn5JE8zLWrkuN8kD6o50LceWUdL5HDzJ1W5A8STeiTlQIUOYxtX4aJFFoy1Hcc2gAHjnhNwa8RFQ8n8D3jRw2iFmH28EGwZ1UdCYiHsEfUbirxSjW//qmBjItg9UfsNp9QInUIrQ7WfWdf8ibmYI5fCFjvvIGcszEXAMPLETOKEN",
+	AccessKeyId:     "[YOUR AWS KEY HERE]",
+	AccessSecretKey: "[YOUR AWS SECRET HERE]",
+	SecurityToken:   "[YOUR AWS SECRET SECRET TOKEN]",
 }
 
 func (s AwsSink) ServeHTTP(w http.ResponseWriter, r *http.Request) {

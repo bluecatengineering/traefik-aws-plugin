@@ -21,8 +21,8 @@ func TestCanonRequestV4(t *testing.T) {
 			expectedAuthZ: "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,SignedHeaders=host;range;x-amz-content-sha256;x-amz-date,Signature=f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41",
 			sig: &CanonRequest{
 				Creds: &aws.Credentials{
-					AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-					AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+					AccessSecretKey: "[YOUR AWS SECRET HERE]",
+					AccessKeyId:     "[YOUR AWS KEY HERE]",
 				},
 				httpVerb:       "GET",
 				date:           "20130524T000000Z",
@@ -44,8 +44,8 @@ func TestCanonRequestV4(t *testing.T) {
 			expectedAuthZ: "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature=98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd",
 			sig: &CanonRequest{
 				Creds: &aws.Credentials{
-					AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-					AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+					AccessSecretKey: "[YOUR AWS SECRET HERE]",
+					AccessKeyId:     "[YOUR AWS KEY HERE]",
 				},
 				httpVerb:       "PUT",
 				date:           "Fri, 24 May 2013 00:00:00 GMT",
@@ -79,8 +79,8 @@ func TestCanonRequestV4(t *testing.T) {
 func TestSignerV4(t *testing.T) {
 	crTemplate := &CanonRequest{
 		Creds: &aws.Credentials{
-			AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+			AccessSecretKey: "[YOUR AWS SECRET HERE]",
+			AccessKeyId:     "[YOUR AWS KEY HERE]",
 		},
 		Region:         "us-east-1",
 		Service:        "s3",
