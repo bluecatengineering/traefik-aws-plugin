@@ -1,31 +1,55 @@
-## AWS Sink
+# Traefik AWS Plugin
 
-AWS Sink is a `traefik` plugin that enable us to define a route to put data in S3 or dynamodb (not yet implemented) when `traefik` is deployed in ECS.
+This is a [Traefik middleware plugin](https://plugins.traefik.io) which pushes data to and pulls data from Amazon Web Services (AWS) for a Traefik instance running in [Amazon Elastic Container Service (ECS)](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html). The following is currently supported:
 
-### Example configuration
+* [Amazon Simple Storage Service (S3)](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html): PUT
+* [Amazon DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html): pending
 
-`traefik.yml`
-``` 
+## Configuration
+
+traefik.yml:
+
+```yaml
 providers:
   ecs:
     exposedByDefault: false
 
 experimental:
   plugins:
-    aws-sink:
-      moduleName: github.com/yoeluk/aws-sink
+    aws:
+      moduleName: github.com/bluecatengineering/traefik-aws-plugin
       version: v0.1.2
 ```
-`ecs task labels` (only showing the most pertinent ecs task docker labels)
-``` 
-dockerLabels = {
-    "traefik.enable" : "true"
-    "traefik.http.routers.awssink.service" : "noop@internal"
-    "traefik.http.routers.awssink.rule" : "Host(`awssink.myhostexample.io`)"
-    "traefik.http.routers.awssink.middlewares" : "awssink"
-    "traefik.http.middlewares.awsskink.plugin.aws-sink.sinkType" : "s3"
-    "traefik.http.middlewares.awsskink.plugin.aws-sink.bucket" : "devjam-yoel"
-    "traefik.http.middlewares.awsskink.plugin.aws-sink.region" : "us-west-2"
-    "traefik.http.middlewares.awsskink.plugin.aws-sink.prefix" : "data"
+
+Example labels for a given router:
+
+```text
+"traefik.enable" : "true"
+"traefik.http.routers.my-router.service" : "noop@internal"
+"traefik.http.routers.my-router.rule" : "Host(`aws.myhostexample.io`)"
+"traefik.http.routers.my-router.middlewares" : "my-aws"
+```
+
+S3 example labels, `prefix` includes leading slash:
+
+```text
+"traefik.http.middlewares.my-aws.plugin.aws.service" : "s3"
+"traefik.http.middlewares.my-aws.plugin.aws.bucket" : "my-bucket"
+"traefik.http.middlewares.my-aws.plugin.aws.region" : "us-west-2"
+"traefik.http.middlewares.my-aws.plugin.aws.prefix" : "/prefix"
 }
 ```
+
+Local directory example labels:
+
+```text
+"traefik.http.middlewares.my-aws.plugin.aws.type" : "local"
+"traefik.http.middlewares.my-aws.plugin.aws.directory" : "aws-local-directory"
+```
+
+## Development
+
+To develop `traefik-aws-plugin` in a local workspace:
+
+* Install [go](https://go.dev/doc/install)
+* Install [golangci-lint](https://golangci-lint.run/usage/install/)

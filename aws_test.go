@@ -1,4 +1,4 @@
-package aws_sink
+package aws
 
 import (
 	"testing"

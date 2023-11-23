@@ -14,7 +14,10 @@ jobs:
         goarch: [amd64, arm64]
 
     steps:
+      # https://github.com/marketplace/actions/checkout
       - uses: actions/checkout@v3
+
+      # https://github.com/marketplace/actions/go-release-binaries
       - uses: wangyoucao577/go-release-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

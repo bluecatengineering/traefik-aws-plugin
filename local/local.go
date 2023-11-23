@@ -2,44 +2,33 @@ package local
 
 import (
 	"fmt"
-	"github.com/yoeluk/aws-sink/aws"
-	"github.com/yoeluk/aws-sink/log"
-	"github.com/yoeluk/aws-sink/signer"
+	"github.com/bluecatengineering/traefik-aws-plugin/log"
 	"net/http"
 	"os"
 )
 
-type Sink struct {
-	client         *http.Client
-	template       *signer.CanonRequest
-	localDirectory string
+type Local struct {
+	directory string
 }
 
-func New(region, localDirectory string, creds *aws.Credentials) *Sink {
-	cr := &signer.CanonRequest{
-		Creds:          creds,
-		Region:         region,
-		Service:        "local",
-		VersionRequest: "aws4_request",
-	}
-	return &Sink{
-		client:         &http.Client{},
-		template:       cr,
-		localDirectory: localDirectory,
+func New(directory string) *Local {
+	return &Local{
+		directory: directory,
 	}
 }
 
-func (s *Sink) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
-	f, err := os.OpenFile(fmt.Sprintf("%s/%s", s.localDirectory, name), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+func (local *Local) Put(name string, payload []byte, _ string, _ http.ResponseWriter) ([]byte, error) {
+	filePath := fmt.Sprintf("%s/%s", local.directory, name)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	_, err = f.Write(payload)
+	_, err = file.Write(payload)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
-	log.Debug(fmt.Sprintf("put %q object in %q local directory.", name, s.localDirectory))
-	return []byte(fmt.Sprintf("object %q was put in the local sink", name)), nil
+	log.Debug(fmt.Sprintf("%q written", filePath))
+	return []byte(fmt.Sprintf("%q written", filePath)), nil
 }

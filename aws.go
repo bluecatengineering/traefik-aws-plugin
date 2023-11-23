@@ -1,0 +1,76 @@
+package aws
+
+import (
+	"context"
+	"fmt"
+	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
+	"github.com/bluecatengineering/traefik-aws-plugin/local"
+	"github.com/bluecatengineering/traefik-aws-plugin/log"
+	"github.com/bluecatengineering/traefik-aws-plugin/s3"
+	"io"
+	"net/http"
+)
+
+type Service interface {
+	Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
+}
+
+type Config struct {
+	TimeoutSeconds int
+	Service        string
+
+	// S3
+	Bucket string
+	Prefix string
+	Region string
+
+	// Local Directory
+	Directory string
+}
+
+func CreateConfig() *Config {
+	return &Config{TimeoutSeconds: 5}
+}
+
+type AwsPlugin struct {
+	next    http.Handler
+	name    string
+	service Service
+}
+
+func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	payload, err := io.ReadAll(req.Body)
+	if err != nil {
+		rw.WriteHeader(http.StatusNotAcceptable)
+		log.Error(fmt.Sprintf("Reading body failed: %s", err.Error()))
+		return
+	}
+	resp, err := plugin.service.Put(req.URL.Path[1:], payload, req.Header.Get("Content-Type"), rw)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		http.Error(rw, fmt.Sprintf("Put error: %s", err.Error()), http.StatusInternalServerError)
+		log.Error(err.Error())
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	_, err = rw.Write(resp)
+	if err != nil {
+		http.Error(rw, string(resp)+err.Error(), http.StatusBadGateway)
+	}
+	plugin.next.ServeHTTP(rw, req)
+}
+
+func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+	plugin := &AwsPlugin{next: next, name: name}
+	switch config.Service {
+	case "s3":
+		plugin.service = s3.New(config.Bucket, config.Prefix, config.Region, config.TimeoutSeconds, ecs.GetCredentials())
+		return plugin, nil
+	case "local":
+		plugin.service = local.New(config.Directory)
+		return plugin, nil
+	default:
+		log.Error(fmt.Sprintf("unknown service: %s", config.Service))
+	}
+	return next, fmt.Errorf("invalid config: %v", config)
+}

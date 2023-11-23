@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/yoeluk/aws-sink/aws"
+	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
 	"net/http"
 	"net/url"
 	"sort"
@@ -13,89 +13,103 @@ import (
 	"time"
 )
 
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
 type CanonRequest struct {
-	// aws
-	Creds          *aws.Credentials
-	Region         string
-	Service        string
-	VersionRequest string
+	// ecs
+	Creds   *ecs.Credentials
+	Region  string
+	Service string
 
 	// V4 data
-	httpVerb    string
+	httpMethod  string
 	date        string
 	queryParams map[string]string
 	amzHeaders  map[string]string
-	resource    string
+	canonUri    string
 }
 
-func (c *CanonRequest) RequestString() string {
-	qstring := canonString(c.queryParams, "=", "&", true)
-	headers := canonString(c.amzHeaders, ":", "\n", false)
-	keys := strings.Join(sortedKeys(c.amzHeaders), ";")
-	contentSha256 := c.amzHeaders["x-amz-content-sha256"]
-	return fmt.Sprintf("%s\n%s\n%s\n%s\n\n%s\n%s", c.httpVerb, c.resource, qstring, headers, keys, contentSha256)
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#create-canonical-request
+func (cr *CanonRequest) RequestString() string {
+	queryString := canonString(cr.queryParams, "=", "&", true)
+	headers := canonString(cr.amzHeaders, ":", "\n", false)
+	signedHeaders := strings.Join(sortedKeys(cr.amzHeaders), ";")
+	hashedPayload := cr.amzHeaders["x-amz-content-sha256"]
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n\n%s\n%s", cr.httpMethod, cr.canonUri, queryString, headers, signedHeaders, hashedPayload)
 }
 
-func (c *CanonRequest) StringToSignV4() string {
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#create-string-to-sign
+func (cr *CanonRequest) StringToSignV4() string {
+	algorithm := "AWS4-HMAC-SHA256"
+
+	requestDateTime := cr.date
+	if amzDate, ok := cr.amzHeaders["x-amz-date"]; ok {
+		requestDateTime = amzDate
+	}
+
+	credentialScope := requestDateTime[:8] + "/" + cr.Region + "/" + cr.Service + "/aws4_request"
+
 	sha := sha256.New()
-	sha.Write([]byte(c.RequestString()))
-	canRequest := sha.Sum(nil)
-	date := c.date
-	if awsDate, ok := c.amzHeaders["x-amz-date"]; ok {
-		date = awsDate
-	}
-	return "AWS4-HMAC-SHA256" + "\n" +
-		date + "\n" +
-		date[:8] + "/" + c.Region + "/" + c.Service + "/" + c.VersionRequest + "\n" +
-		hex.EncodeToString(canRequest)
+	sha.Write([]byte(cr.RequestString()))
+	canonRequestSha := sha.Sum(nil)
+	hashedCanonRequest := hex.EncodeToString(canonRequestSha)
+
+	return fmt.Sprintf("%s\n%s\n%s\n%s", algorithm, requestDateTime, credentialScope, hashedCanonRequest)
 }
 
-func (c *CanonRequest) SignatureV4() string {
-	date := c.date
-	if awsDate, ok := c.amzHeaders["x-amz-date"]; ok {
-		date = awsDate
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#calculate-signature
+func (cr *CanonRequest) SignatureV4() string {
+	date := cr.date
+	if amzDate, ok := cr.amzHeaders["x-amz-date"]; ok {
+		date = amzDate
 	}
-	dateKey := hmac.New(sha256.New, []byte("AWS4"+c.Creds.AccessSecretKey))
+
+	dateKey := hmac.New(sha256.New, []byte("AWS4"+cr.Creds.AccessSecretKey))
 	dateKey.Write([]byte(date[:8]))
+
 	dateRegionKey := hmac.New(sha256.New, dateKey.Sum(nil))
-	dateRegionKey.Write([]byte(c.Region))
+	dateRegionKey.Write([]byte(cr.Region))
+
 	dateRegionServiceKey := hmac.New(sha256.New, dateRegionKey.Sum(nil))
-	dateRegionServiceKey.Write([]byte(c.Service))
+	dateRegionServiceKey.Write([]byte(cr.Service))
+
 	signingKey := hmac.New(sha256.New, dateRegionServiceKey.Sum(nil))
 	signingKey.Write([]byte("aws4_request"))
+
 	signatureV4 := hmac.New(sha256.New, signingKey.Sum(nil))
-	signatureV4.Write([]byte(c.StringToSignV4()))
+	signatureV4.Write([]byte(cr.StringToSignV4()))
+
 	return hex.EncodeToString(signatureV4.Sum(nil))
 }
 
-func (c *CanonRequest) AuthHeader() string {
-	date := c.date
-	if awsDate, ok := c.amzHeaders["x-amz-date"]; ok {
-		date = awsDate
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#add-signature-to-request
+func (cr *CanonRequest) AuthHeader() string {
+	date := cr.date
+	if amzDate, ok := cr.amzHeaders["x-amz-date"]; ok {
+		date = amzDate
 	}
 	return "AWS4-HMAC-SHA256 " +
-		"Credential=" + c.Creds.AccessKeyId + "/" + date[:8] + "/" + c.Region + "/" + c.Service + "/" + c.VersionRequest +
-		",SignedHeaders=" + strings.Join(sortedKeys(c.amzHeaders), ";") +
-		",Signature=" + c.SignatureV4()
+		"Credential=" + cr.Creds.AccessKeyId + "/" + date[:8] + "/" + cr.Region + "/" + cr.Service + "/aws4_request" +
+		",SignedHeaders=" + strings.Join(sortedKeys(cr.amzHeaders), ";") +
+		",Signature=" + cr.SignatureV4()
 }
 
-func Signer(request *http.Request, payload []byte, crTemplate CanonRequest) *CanonRequest {
+func CreateCanonRequest(req *http.Request, payload []byte, crTemplate CanonRequest) *CanonRequest {
 	now := time.Now()
 	formatted := strings.ReplaceAll(
 		strings.ReplaceAll(now.UTC().Format(time.RFC3339), "-", ""),
 		":", "")
-	awsDate := formatted[:len(formatted)-3] + "00Z"
-	if date := request.Header.Get("date"); date == "" {
-		request.Header.Set("date", now.Local().Format(time.RFC1123))
+	amzDate := formatted[:len(formatted)-3] + "00Z"
+	if date := req.Header.Get("date"); date == "" {
+		req.Header.Set("date", now.Local().Format(time.RFC1123))
 	}
 	sha := sha256.New()
 	sha.Write(payload)
-	request.Header.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha.Sum(nil)))
-	request.Header.Set("X-Amz-Date", awsDate)
+	req.Header.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha.Sum(nil)))
+	req.Header.Set("X-Amz-Date", amzDate)
 	if crTemplate.Creds.SecurityToken != "" {
-		request.Header.Set("x-amz-security-token", crTemplate.Creds.SecurityToken)
+		req.Header.Set("x-amz-security-token", crTemplate.Creds.SecurityToken)
 	}
-	return updateCanonRequest(request, &crTemplate)
+	return updateCanonRequest(req, &crTemplate)
 }
 
 func updateCanonRequest(req *http.Request, cr *CanonRequest) *CanonRequest {
@@ -104,11 +118,11 @@ func updateCanonRequest(req *http.Request, cr *CanonRequest) *CanonRequest {
 	for k, vs := range m {
 		headers[strings.ToLower(k)] = strings.TrimSpace(strings.Join(vs, ","))
 	}
-	cr.httpVerb = req.Method
+	cr.httpMethod = req.Method
 	cr.date = headers["date"]
 	cr.amzHeaders = headers
 	if req.URL.Path != "" {
-		cr.resource = strings.TrimSpace(req.URL.Path)
+		cr.canonUri = strings.TrimSpace(req.URL.Path)
 	}
 	return cr
 }

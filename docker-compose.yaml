@@ -3,36 +3,31 @@ services:
   traefik:
     image: traefik:v2.10.4
     ports:
-      # The HTTP port
+      # HTTP
       - "80:80"
-      # The Web UI (enabled by --api.insecure=true)
+      # Web UI, enabled by --api.insecure=true
       - "8080:8080"
     privileged: true
     working_dir: /app
     volumes:
       # So that Traefik can listen to the Docker events
       - /run/podman/podman.sock:/var/run/docker.sock
-      # load traefik.yml to the default location
+      # Default location
       - ./traefik.yml:/etc/traefik/traefik.yml
-      # mount the plugin sources
-      - .:/app/plugins-local/src/github.com/yoeluk/aws-sink
-      # mount a local directory for the local sink
-      - ./storage:/app/aws-sink-local
+      # Plugin sources
+      - .:/app/plugins-local/src/github.com/bluecatengineering/traefik-aws-plugin
+      # Local directory
+      - ./storage:/app/aws-local-directory
     labels:
       - traefik.enable=true
-      - traefik.http.middlewares.awssink.plugin.aws-sink.sinkType=local
-      - traefik.http.middlewares.awssink.plugin.aws-sink.localDirectory=aws-sink-local
-#        setting example for s3 sink
-#      - traefik.http.middlewares.awssink.plugin.aws-sink.sinkType=s3
-#      - traefik.http.middlewares.awssink.plugin.aws-sink.bucket=devjam-yoel
-#      - traefik.http.middlewares.awssink.plugin.aws-sink.region=us-west-2
-#      - traefik.http.middlewares.awssink.plugin.aws-sink.prefix=/data
-      - traefik.http.routers.sink.service=noop@internal
-      - traefik.http.routers.sink.rule=Host(`sink.docker.localhost`)
-      - traefik.http.routers.sink.middlewares=awssink
+      - traefik.http.routers.my-router.service=noop@internal
+      - traefik.http.routers.my-router.rule=Host(`traefik.docker.localhost`)
+      - traefik.http.routers.my-router.middlewares=my-aws
+      - traefik.http.middlewares.my-aws.plugin.aws.type=local
+      - traefik.http.middlewares.my-aws.plugin.aws.directory=aws-local-directory
 
   whoami:
-    # A container that exposes an API to show its IP address
+    # Exposes an API to show its IP address
     image: traefik/whoami
     labels:
       - traefik.enable=true
