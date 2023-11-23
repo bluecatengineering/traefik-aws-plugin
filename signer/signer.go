@@ -102,8 +102,12 @@ func CreateCanonRequest(req *http.Request, payload []byte, crTemplate CanonReque
 	if date := req.Header.Get("date"); date == "" {
 		req.Header.Set("date", now.Local().Format(time.RFC1123))
 	}
+	crPayload := payload
+	if crPayload == nil {
+		crPayload = []byte("")
+	}
 	sha := sha256.New()
-	sha.Write(payload)
+	sha.Write(crPayload)
 	req.Header.Set("X-Amz-Content-Sha256", hex.EncodeToString(sha.Sum(nil)))
 	req.Header.Set("X-Amz-Date", amzDate)
 	if crTemplate.Creds.SecurityToken != "" {
