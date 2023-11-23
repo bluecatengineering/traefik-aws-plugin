@@ -17,12 +17,12 @@ func TestCanonRequestV4(t *testing.T) {
 	}{
 		{
 			name:               "get object request",
-			expectedSig:        "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41",
-			expectedAuthHeader: "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,SignedHeaders=host;range;x-amz-content-sha256;x-amz-date,Signature=f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41",
+			expectedSig:        "5e00930a4878798235e8c6527ca3cfd780b87b472de204b22a07fbc10841e751",
+			expectedAuthHeader: "AWS4-HMAC-SHA256 Credential=KEY/20130524/us-east-1/s3/aws4_request,SignedHeaders=host;range;x-amz-content-sha256;x-amz-date,Signature=5e00930a4878798235e8c6527ca3cfd780b87b472de204b22a07fbc10841e751",
 			cr: &CanonRequest{
 				Creds: &ecs.Credentials{
-					AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-					AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+					AccessSecretKey: "SECRET",
+					AccessKeyId:     "KEY",
 				},
 				httpMethod: "GET",
 				date:       "20130524T000000Z",
@@ -39,12 +39,12 @@ func TestCanonRequestV4(t *testing.T) {
 		},
 		{
 			name:               "put object request",
-			expectedSig:        "98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd",
-			expectedAuthHeader: "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature=98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd",
+			expectedSig:        "7de0355f21977e2d7defda79bd7e0b671008cbe91c5cb1bdde815295d54e17fb",
+			expectedAuthHeader: "AWS4-HMAC-SHA256 Credential=KEY/20130524/us-east-1/s3/aws4_request,SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature=7de0355f21977e2d7defda79bd7e0b671008cbe91c5cb1bdde815295d54e17fb",
 			cr: &CanonRequest{
 				Creds: &ecs.Credentials{
-					AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-					AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+					AccessSecretKey: "SECRET",
+					AccessKeyId:     "KEY",
 				},
 				httpMethod: "PUT",
 				date:       "Fri, 24 May 2013 00:00:00 GMT",
@@ -77,8 +77,8 @@ func TestCanonRequestV4(t *testing.T) {
 func TestSignerV4(t *testing.T) {
 	crTemplate := &CanonRequest{
 		Creds: &ecs.Credentials{
-			AccessSecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+			AccessSecretKey: "SECRET",
+			AccessKeyId:     "KEY",
 		},
 		Region:  "us-east-1",
 		Service: "s3",
