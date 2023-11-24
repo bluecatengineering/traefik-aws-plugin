@@ -35,9 +35,13 @@ func New(bucket, prefix, region string, timeoutSeconds int, creds *ecs.Credentia
 	}
 }
 
-func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+func (s3 *S3) request(httpMethod string, name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	uri := s3.bucketUri + s3.prefix + "/" + name
-	req, err := http.NewRequest("PUT", uri, bytes.NewReader(payload))
+	var payloadReader io.Reader = nil
+	if payload != nil {
+		payloadReader = bytes.NewReader(payload)
+	}
+	req, err := http.NewRequest(httpMethod, uri, payloadReader)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -46,13 +50,15 @@ func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.Respo
 	if cancel != nil {
 		defer cancel()
 	}
-	req.Header.Set("Content-Type", contentType)
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
 	req.Header.Set("Host", req.URL.Host)
 	cr := signer.CreateCanonRequest(req, payload, *s3.crTemplate)
 	req.Header.Set("Authorization", cr.AuthHeader())
 	resp, err := s3.client.Do(req.WithContext(ctx))
 	if err != nil {
-		log.Error(fmt.Sprintf("PUT %q failed, status: %q, error: %s", uri, resp.Status, err.Error()))
+		log.Error(fmt.Sprintf("%s %q failed, status: %q, error: %s", httpMethod, uri, resp.Status, err.Error()))
 		return nil, err
 	}
 	if resp.StatusCode > 299 {
@@ -64,6 +70,14 @@ func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.Respo
 	}
 	copyHeader(rw.Header(), resp.Header)
 	return response, nil
+}
+
+func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+	return s3.request("PUT", name, payload, contentType, rw)
+}
+
+func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
+	return s3.request("GET", name, nil, "", rw)
 }
 
 func copyHeader(dst, src http.Header) {

@@ -13,6 +13,7 @@ import (
 
 type Service interface {
 	Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
+	Get(name string, rw http.ResponseWriter) ([]byte, error)
 }
 
 type Config struct {
@@ -39,6 +40,18 @@ type AwsPlugin struct {
 }
 
 func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case "PUT":
+		plugin.put(rw, req)
+	case "GET":
+		plugin.get(rw, req)
+	default:
+		http.Error(rw, fmt.Sprintf("Method %s not implemented", req.Method), http.StatusNotImplemented)
+	}
+	plugin.next.ServeHTTP(rw, req)
+}
+
+func (plugin AwsPlugin) put(rw http.ResponseWriter, req *http.Request) {
 	payload, err := io.ReadAll(req.Body)
 	if err != nil {
 		rw.WriteHeader(http.StatusNotAcceptable)
@@ -46,6 +59,15 @@ func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	resp, err := plugin.service.Put(req.URL.Path[1:], payload, req.Header.Get("Content-Type"), rw)
+	handleResponse(resp, err, rw)
+}
+
+func (plugin *AwsPlugin) get(rw http.ResponseWriter, req *http.Request) {
+	resp, err := plugin.service.Get(req.URL.Path[1:], rw)
+	handleResponse(resp, err, rw)
+}
+
+func handleResponse(resp []byte, err error, rw http.ResponseWriter) {
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		http.Error(rw, fmt.Sprintf("Put error: %s", err.Error()), http.StatusInternalServerError)
@@ -57,7 +79,6 @@ func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(rw, string(resp)+err.Error(), http.StatusBadGateway)
 	}
-	plugin.next.ServeHTTP(rw, req)
 }
 
 func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
