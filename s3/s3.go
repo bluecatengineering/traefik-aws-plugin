@@ -73,11 +73,11 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 }
 
 func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request("PUT", name, payload, contentType, rw)
+	return s3.request(http.MethodPut, name, payload, contentType, rw)
 }
 
 func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request("GET", name, nil, "", rw)
+	return s3.request(http.MethodGet, name, nil, "", rw)
 }
 
 func copyHeader(dst, src http.Header) {

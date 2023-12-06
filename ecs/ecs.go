@@ -45,7 +45,7 @@ func getCredentials(creds *Credentials) {
 }
 
 func refreshCredentials(creds *Credentials, client *http.Client, credsUri string) error {
-	req, err := http.NewRequest("GET", credsUri, nil)
+	req, err := http.NewRequest(http.MethodGet, credsUri, nil)
 	if err != nil {
 		return err
 	}

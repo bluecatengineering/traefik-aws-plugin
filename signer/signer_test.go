@@ -84,7 +84,7 @@ func TestSignerV4(t *testing.T) {
 		Service: "s3",
 	}
 
-	r1, _ := http.NewRequest("PUT", "https://examplebucket.s3.amazonaws.com/text/test/file.text", bytes.NewReader([]byte("")))
+	r1, _ := http.NewRequest(http.MethodPut, "https://examplebucket.s3.amazonaws.com/text/test/file.text", bytes.NewReader([]byte("")))
 
 	testCases := []struct {
 		name     string

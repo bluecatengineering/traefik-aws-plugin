@@ -41,9 +41,9 @@ type AwsPlugin struct {
 
 func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	switch req.Method {
-	case "PUT":
+	case http.MethodPut:
 		plugin.put(rw, req)
-	case "GET":
+	case http.MethodGet:
 		plugin.get(rw, req)
 	default:
 		http.Error(rw, fmt.Sprintf("Method %s not implemented", req.Method), http.StatusNotImplemented)
@@ -51,7 +51,7 @@ func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	plugin.next.ServeHTTP(rw, req)
 }
 
-func (plugin AwsPlugin) put(rw http.ResponseWriter, req *http.Request) {
+func (plugin *AwsPlugin) put(rw http.ResponseWriter, req *http.Request) {
 	payload, err := io.ReadAll(req.Body)
 	if err != nil {
 		rw.WriteHeader(http.StatusNotAcceptable)
@@ -67,15 +67,15 @@ func (plugin *AwsPlugin) get(rw http.ResponseWriter, req *http.Request) {
 	handleResponse(resp, err, rw)
 }
 
-func handleResponse(resp []byte, err error, rw http.ResponseWriter) {
-	if err != nil {
+func handleResponse(resp []byte, reqErr error, rw http.ResponseWriter) {
+	if reqErr != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		http.Error(rw, fmt.Sprintf("Put error: %s", err.Error()), http.StatusInternalServerError)
-		log.Error(err.Error())
+		http.Error(rw, fmt.Sprintf("Put error: %s", reqErr.Error()), http.StatusInternalServerError)
+		log.Error(reqErr.Error())
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
-	_, err = rw.Write(resp)
+	_, err := rw.Write(resp)
 	if err != nil {
 		http.Error(rw, string(resp)+err.Error(), http.StatusBadGateway)
 	}
