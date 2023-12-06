@@ -1,4 +1,4 @@
-package aws
+package traefik_aws_plugin
 
 import (
 	"testing"
