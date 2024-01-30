@@ -3,6 +3,7 @@ package local
 import (
 	"fmt"
 	"github.com/bluecatengineering/traefik-aws-plugin/log"
+	"github.com/google/uuid"
 	"net/http"
 	"os"
 )
@@ -31,6 +32,10 @@ func (local *Local) Put(name string, payload []byte, _ string, _ http.ResponseWr
 	}
 	log.Debug(fmt.Sprintf("%q written", filePath))
 	return []byte(fmt.Sprintf("%q written", filePath)), nil
+}
+
+func (local *Local) Post(path string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+	return local.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
 
 func (local *Local) Get(name string, _ http.ResponseWriter) ([]byte, error) {

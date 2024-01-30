@@ -14,8 +14,7 @@ experimental:
   plugins:
     aws:
       moduleName: github.com/bluecatengineering/traefik-aws-plugin
-      version: v0.1.2
-```
+      version: v0.2.0
 
 Example labels for a given router:
 
@@ -37,7 +36,9 @@ To store objects in a local directory, use the following labels (example):
 "traefik.http.middlewares.my-aws.plugin.aws.directory" : "aws-local-directory"
 ```
 
-`GET` and `PUT` are supported.
+`GET`, `PUT` and `POST` are supported.
+`POST` will append a UUID to the path.  
+
 
 ### S3
 
