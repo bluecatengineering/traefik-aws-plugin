@@ -69,7 +69,9 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 	if err != nil {
 		log.Error(fmt.Sprintf("Reading S3 response body failed: %q", err.Error()))
 	}
+	resp.Header.Add("ObjectLocation", s3.prefix+"/"+name)
 	copyHeader(rw.Header(), resp.Header)
+
 	return response, nil
 }
 
@@ -80,7 +82,6 @@ func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.Respo
 func (s3 *S3) Post(path string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	return s3.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
-
 
 func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
 	return s3.request(http.MethodGet, name, nil, "", rw)

@@ -18,7 +18,7 @@ func New(directory string) *Local {
 	}
 }
 
-func (local *Local) Put(name string, payload []byte, _ string, _ http.ResponseWriter) ([]byte, error) {
+func (local *Local) Put(name string, payload []byte, _ string, rw http.ResponseWriter) ([]byte, error) {
 	filePath := fmt.Sprintf("%s/%s", local.directory, name)
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -31,6 +31,7 @@ func (local *Local) Put(name string, payload []byte, _ string, _ http.ResponseWr
 		return nil, err
 	}
 	log.Debug(fmt.Sprintf("%q written", filePath))
+	rw.Header().Add("ObjectLocation", name)
 	return []byte(fmt.Sprintf("%q written", filePath)), nil
 }
 
