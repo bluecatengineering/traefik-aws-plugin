@@ -37,7 +37,7 @@ To store objects in a local directory, use the following labels (example):
 ```
 
 `GET`, `PUT` and `POST` are supported.
-`POST` will append a UUID to the path. There is an `Location` header in the response.
+`POST` will append a UUID to the path. There is a `Location` header in the response.
 
 
 ### S3
@@ -55,7 +55,7 @@ To store objects in [Amazon Simple Storage Service (S3)](https://docs.aws.amazon
 Note that `prefix` must include the leading slash.
 
 [PUT](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) and [GET](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html) are supported. 
-If you make a POST request, a UUID will be generated for the object key and will put that object. There is an `Location` header in the response.
+If you make a POST request, a UUID will be generated and the object will be created in the same manner as a PUT request. A `Location` header is sent back in the response.
 
 When forwarding the request to S3, the plugin sets the following headers:
 
