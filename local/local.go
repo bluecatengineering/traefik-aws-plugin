@@ -2,10 +2,11 @@ package local
 
 import (
 	"fmt"
-	"github.com/bluecatengineering/traefik-aws-plugin/log"
-	"github.com/google/uuid"
 	"net/http"
 	"os"
+
+	"github.com/bluecatengineering/traefik-aws-plugin/log"
+	"github.com/google/uuid"
 )
 
 type Local struct {
@@ -31,7 +32,7 @@ func (local *Local) Put(name string, payload []byte, _ string, rw http.ResponseW
 		return nil, err
 	}
 	log.Debug(fmt.Sprintf("%q written", filePath))
-	rw.Header().Add("ObjectLocation", name)
+	rw.Header().Add("Location", name)
 	return []byte(fmt.Sprintf("%q written", filePath)), nil
 }
 
