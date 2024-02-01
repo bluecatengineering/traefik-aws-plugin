@@ -16,7 +16,6 @@ jobs:
     env:
       GO_VERSION: 1.21.3
       GOLANGCI_LINT_VERSION: v1.55.2
-      YAEGI_VERSION: v0.15.1
       CGO_ENABLED: 0
     runs-on: ubuntu-latest
     steps:
@@ -52,13 +51,5 @@ jobs:
     - name: Lint, Test, Build
       run: make lint test build
 
-    - name: Install yaegi ${{ env.YAEGI_VERSION }}
-      run: curl -sfL https://raw.githubusercontent.com/traefik/yaegi/master/install.sh | bash -s -- -b ${{ github.workspace }}/go/bin ${{ env.YAEGI_VERSION }}
-
     - name: Copy sources
       run: make copy_src
-
-    - name: Run tests with yaegi
-      run: ${{ github.workspace }}/go/bin/yaegi test -v github.com/bluecatengineering/traefik-aws-plugin
-      env:
-        GOPATH: ${{ github.workspace }}/go
