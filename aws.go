@@ -13,6 +13,7 @@ import (
 
 type Service interface {
 	Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
+	Post(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
 	Get(name string, rw http.ResponseWriter) ([]byte, error)
 }
 

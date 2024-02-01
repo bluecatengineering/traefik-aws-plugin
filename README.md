@@ -14,8 +14,7 @@ experimental:
   plugins:
     aws:
       moduleName: github.com/bluecatengineering/traefik-aws-plugin
-      version: v0.1.2
-```
+      version: v0.2.0
 
 Example labels for a given router:
 
@@ -37,7 +36,9 @@ To store objects in a local directory, use the following labels (example):
 "traefik.http.middlewares.my-aws.plugin.aws.directory" : "aws-local-directory"
 ```
 
-`GET` and `PUT` are supported.
+`GET`, `PUT` and `POST` are supported.
+`POST` will append a UUID to the path. There is a `Location` header in the response.
+
 
 ### S3
 
@@ -53,7 +54,8 @@ To store objects in [Amazon Simple Storage Service (S3)](https://docs.aws.amazon
 
 Note that `prefix` must include the leading slash.
 
-[PUT](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) and [GET](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html) are supported.
+[PUT](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) and [GET](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html) are supported. 
+If you make a POST request, a UUID will be generated and the object will be created in the same manner as a PUT request. A `Location` header is sent back in the response.
 
 When forwarding the request to S3, the plugin sets the following headers:
 

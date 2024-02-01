@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
-	"github.com/bluecatengineering/traefik-aws-plugin/log"
-	"github.com/bluecatengineering/traefik-aws-plugin/signer"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
+	"github.com/bluecatengineering/traefik-aws-plugin/log"
+	"github.com/bluecatengineering/traefik-aws-plugin/signer"
+	"github.com/google/uuid"
 )
 
 type S3 struct {
@@ -68,12 +70,18 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 	if err != nil {
 		log.Error(fmt.Sprintf("Reading S3 response body failed: %q", err.Error()))
 	}
+	resp.Header.Add("Location", s3.prefix+"/"+name)
 	copyHeader(rw.Header(), resp.Header)
+
 	return response, nil
 }
 
 func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	return s3.request(http.MethodPut, name, payload, contentType, rw)
+}
+
+func (s3 *S3) Post(path string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+	return s3.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
 
 func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
