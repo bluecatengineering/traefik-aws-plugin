@@ -44,6 +44,8 @@ func (plugin AwsPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodPut:
 		plugin.put(rw, req)
+	case http.MethodPost:
+		plugin.post(rw, req)
 	case http.MethodGet:
 		plugin.get(rw, req)
 	default:
@@ -60,6 +62,17 @@ func (plugin *AwsPlugin) put(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	resp, err := plugin.service.Put(req.URL.Path[1:], payload, req.Header.Get("Content-Type"), rw)
+	handleResponse(resp, err, rw)
+}
+
+func (plugin *AwsPlugin) post(rw http.ResponseWriter, req *http.Request) {
+	payload, err := io.ReadAll(req.Body)
+	if err != nil {
+		rw.WriteHeader(http.StatusNotAcceptable)
+		log.Error(fmt.Sprintf("Reading body failed: %s", err.Error()))
+		return
+	}
+	resp, err := plugin.service.Post(req.URL.Path[1:], payload, req.Header.Get("Content-Type"), rw)
 	handleResponse(resp, err, rw)
 }
 
