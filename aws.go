@@ -3,18 +3,20 @@ package traefik_aws_plugin
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
 	"github.com/bluecatengineering/traefik-aws-plugin/local"
 	"github.com/bluecatengineering/traefik-aws-plugin/log"
 	"github.com/bluecatengineering/traefik-aws-plugin/s3"
-	"io"
-	"net/http"
 )
 
 type Service interface {
 	Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
 	Post(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error)
-	Get(name string, rw http.ResponseWriter) ([]byte, error)
+	Get(name string, params url.Values, rw http.ResponseWriter) ([]byte, error)
 }
 
 type Config struct {
@@ -77,7 +79,7 @@ func (plugin *AwsPlugin) post(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (plugin *AwsPlugin) get(rw http.ResponseWriter, req *http.Request) {
-	resp, err := plugin.service.Get(req.URL.Path[1:], rw)
+	resp, err := plugin.service.Get(req.URL.Path[1:], req.URL.Query(), rw)
 	handleResponse(resp, err, rw)
 }
 

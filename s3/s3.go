@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
@@ -37,7 +38,7 @@ func New(bucket, prefix, region string, timeoutSeconds int, creds *ecs.Credentia
 	}
 }
 
-func (s3 *S3) request(httpMethod string, name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+func (s3 *S3) request(httpMethod string, name string, payload []byte, params url.Values, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	uri := s3.bucketUri + s3.prefix + "/" + name
 	var payloadReader io.Reader = nil
 	if payload != nil {
@@ -48,6 +49,7 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 		log.Error(err.Error())
 		return nil, err
 	}
+	req.URL.RawQuery = params.Encode()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s3.timeoutSeconds)*time.Second)
 	if cancel != nil {
 		defer cancel()
@@ -77,15 +79,15 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 }
 
 func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request(http.MethodPut, name, payload, contentType, rw)
+	return s3.request(http.MethodPut, name, payload, nil, contentType, rw)
 }
 
 func (s3 *S3) Post(path string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	return s3.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
 
-func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request(http.MethodGet, name, nil, "", rw)
+func (s3 *S3) Get(name string, params url.Values, rw http.ResponseWriter) ([]byte, error) {
+	return s3.request(http.MethodGet, name, nil, params, "", rw)
 }
 
 func copyHeader(dst, src http.Header) {
