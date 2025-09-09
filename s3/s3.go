@@ -50,6 +50,7 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, params url
 		return nil, err
 	}
 	req.URL.RawQuery = params.Encode()
+	log.Debug("Outgoing S3 request: " + req.URL.String())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s3.timeoutSeconds)*time.Second)
 	if cancel != nil {
 		defer cancel()

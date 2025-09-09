@@ -86,8 +86,8 @@ func (plugin *AwsPlugin) get(rw http.ResponseWriter, req *http.Request) {
 func handleResponse(resp []byte, reqErr error, rw http.ResponseWriter) {
 	if reqErr != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		http.Error(rw, fmt.Sprintf("Put error: %s", reqErr.Error()), http.StatusInternalServerError)
-		log.Error(reqErr.Error())
+		http.Error(rw, fmt.Sprintf("Traefik AWS Plugin error: %s", reqErr.Error()), http.StatusInternalServerError)
+		log.Error("Traefik AWS Plugin error:" + reqErr.Error())
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
