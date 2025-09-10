@@ -5,12 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
 )
 
 // https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html
@@ -23,14 +24,14 @@ type CanonRequest struct {
 	// V4 data
 	httpMethod  string
 	date        string
-	queryParams map[string]string
+	queryParams url.Values
 	amzHeaders  map[string]string
 	canonUri    string
 }
 
 // https://docs.aws.amazon.com/IAM/latest/UserGuide/create-signed-request.html#create-canonical-request
 func (cr *CanonRequest) RequestString() string {
-	queryString := canonString(cr.queryParams, "=", "&", true)
+	queryString := cr.queryParams.Encode()
 	headers := canonString(cr.amzHeaders, ":", "\n", false)
 	signedHeaders := strings.Join(sortedKeys(cr.amzHeaders), ";")
 	hashedPayload := cr.amzHeaders["x-amz-content-sha256"]
@@ -128,6 +129,7 @@ func updateCanonRequest(req *http.Request, cr *CanonRequest) *CanonRequest {
 	if req.URL.Path != "" {
 		cr.canonUri = strings.TrimSpace(req.URL.Path)
 	}
+	cr.queryParams = req.URL.Query()
 	return cr
 }
 

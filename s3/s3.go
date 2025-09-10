@@ -40,6 +40,10 @@ func New(bucket, prefix, region string, timeoutSeconds int, creds *ecs.Credentia
 
 func (s3 *S3) request(httpMethod string, name string, payload []byte, params url.Values, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	uri := s3.bucketUri + s3.prefix + "/" + name
+	if len(params) > 0 {
+		uri += "?" + params.Encode()
+	}
+
 	var payloadReader io.Reader = nil
 	if payload != nil {
 		payloadReader = bytes.NewReader(payload)
@@ -49,8 +53,6 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, params url
 		log.Error(err.Error())
 		return nil, err
 	}
-	req.URL.RawQuery = params.Encode()
-	log.Debug("Outgoing S3 request: " + req.URL.String())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s3.timeoutSeconds)*time.Second)
 	if cancel != nil {
 		defer cancel()
@@ -67,6 +69,7 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, params url
 		return nil, err
 	}
 	if resp.StatusCode > 299 {
+		rw.WriteHeader(resp.StatusCode)
 		return nil, fmt.Errorf(cr.RequestString())
 	}
 	response, err := io.ReadAll(resp.Body)
