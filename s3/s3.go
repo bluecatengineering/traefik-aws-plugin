@@ -3,6 +3,7 @@ package s3
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -70,7 +71,7 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, params url
 	}
 	if resp.StatusCode > 299 {
 		rw.WriteHeader(resp.StatusCode)
-		return nil, fmt.Errorf(cr.RequestString())
+		return nil, errors.New(cr.RequestString())
 	}
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
