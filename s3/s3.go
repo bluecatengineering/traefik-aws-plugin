@@ -3,9 +3,11 @@ package s3
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/bluecatengineering/traefik-aws-plugin/ecs"
@@ -37,8 +39,12 @@ func New(bucket, prefix, region string, timeoutSeconds int, creds *ecs.Credentia
 	}
 }
 
-func (s3 *S3) request(httpMethod string, name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
+func (s3 *S3) request(httpMethod string, name string, payload []byte, params url.Values, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	uri := s3.bucketUri + s3.prefix + "/" + name
+	if len(params) > 0 {
+		uri += "?" + params.Encode()
+	}
+
 	var payloadReader io.Reader = nil
 	if payload != nil {
 		payloadReader = bytes.NewReader(payload)
@@ -64,7 +70,8 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 		return nil, err
 	}
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf(cr.RequestString())
+		rw.WriteHeader(resp.StatusCode)
+		return nil, errors.New(cr.RequestString())
 	}
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -77,15 +84,15 @@ func (s3 *S3) request(httpMethod string, name string, payload []byte, contentTyp
 }
 
 func (s3 *S3) Put(name string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request(http.MethodPut, name, payload, contentType, rw)
+	return s3.request(http.MethodPut, name, payload, nil, contentType, rw)
 }
 
 func (s3 *S3) Post(path string, payload []byte, contentType string, rw http.ResponseWriter) ([]byte, error) {
 	return s3.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
 
-func (s3 *S3) Get(name string, rw http.ResponseWriter) ([]byte, error) {
-	return s3.request(http.MethodGet, name, nil, "", rw)
+func (s3 *S3) Get(name string, params url.Values, rw http.ResponseWriter) ([]byte, error) {
+	return s3.request(http.MethodGet, name, nil, params, "", rw)
 }
 
 func copyHeader(dst, src http.Header) {

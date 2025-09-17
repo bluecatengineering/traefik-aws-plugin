@@ -3,6 +3,7 @@ package local
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/bluecatengineering/traefik-aws-plugin/log"
@@ -40,7 +41,7 @@ func (local *Local) Post(path string, payload []byte, contentType string, rw htt
 	return local.Put(path+"/"+uuid.NewString(), payload, contentType, rw)
 }
 
-func (local *Local) Get(name string, _ http.ResponseWriter) ([]byte, error) {
+func (local *Local) Get(name string, params url.Values, _ http.ResponseWriter) ([]byte, error) {
 	filePath := fmt.Sprintf("%s/%s", local.directory, name)
 	payload, err := os.ReadFile(filePath)
 	if err != nil {
